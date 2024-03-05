@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### log ###
+application-payment-gateway.yml
