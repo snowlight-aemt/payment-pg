@@ -22,6 +22,7 @@ spring:
     init:
       mode: always
       schema-locations: classpath:db-init/schema.sql
+      data-locations: classpath:db-init/test-data.sql
 server:
   shutdown: graceful
   port: 8080
@@ -49,3 +50,4 @@ spring:
   sql:
     init:
       mode: always
+      data-locations:
