@@ -39,3 +39,13 @@ logging:
     org.springframework.web.HttpLogging: off
   pattern:
     console: "%d{HH:mm:ss.SSS}|%highlight(%-5level)|%X{txid:-}|%green(%t)|%logger|%blue(\\(%F:%L\\))|%msg%n"
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  r2dbc:
+    url: r2dbc:pool:h2:mem://localhost/payment
+  sql:
+    init:
+      mode: always
