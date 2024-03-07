@@ -11,11 +11,11 @@ class ProductService(
     private val productRepository: ProductRepository,
 ) {
     suspend fun get(id: Long): Product {
-        return productRepository.findById(id)?: throw NotFoundProductException();
+        return productRepository.findById(id)?: throw NotFoundProductException()
     }
 
     // TASK Paging 기능 추가 필요
     suspend fun getAll(): Flow<Product> {
-        return productRepository.findAll();
+        return productRepository.findAll()
     }
 }
