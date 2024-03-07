@@ -11,7 +11,7 @@ class ProductService(
     private val productRepository: ProductRepository,
 ) {
     suspend fun get(id: Long): Product {
-        return productRepository.findById(id)?: throw NotFoundProductException()
+        return productRepository.findById(id)?: throw NotFoundProductException("$id 상품이 존재하지 않습니다.")
     }
 
     // TASK Paging 기능 추가 필요
