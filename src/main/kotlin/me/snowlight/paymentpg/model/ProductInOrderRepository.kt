@@ -5,4 +5,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface ProductInOrderRepository: CoroutineCrudRepository<ProductInOrder, Long> {
+    suspend fun findAllByOrderId(orderId: Long): List<ProductInOrder>
 }

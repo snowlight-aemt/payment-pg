@@ -2,6 +2,8 @@ package me.snowlight.paymentpg.service
 
 import kotlinx.coroutines.flow.toList
 import me.snowlight.paymentpg.controller.ReqCreateOrder
+import me.snowlight.paymentpg.controller.ResOrder
+import me.snowlight.paymentpg.controller.toResOrder
 import me.snowlight.paymentpg.exception.NotFoundOrderRepository
 import me.snowlight.paymentpg.exception.NotFoundProductException
 import me.snowlight.paymentpg.model.Order
@@ -21,11 +23,13 @@ class OrderService(
     private val productInOrderRepository: ProductInOrderRepository,
 ) {
     @Transactional(readOnly = true)
-    suspend fun get(id: Long) = orderRepository.findById(id)?: throw NotFoundOrderRepository("$id | 주문 정보가 없습니다.")
+    suspend fun get(id: Long): ResOrder {
+        return orderRepository.findById(id)?.toResOrder()?: throw NotFoundOrderRepository("$id | 주문 정보가 없습니다.")
+    }
 
     @Transactional(readOnly = true)
-    suspend fun getAllByUserId(userId: Long): List<Order> {
-        return orderRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+    suspend fun getAllByUserId(userId: Long): List<ResOrder> {
+        return orderRepository.findAllByUserIdOrderByCreatedAtDesc(userId).map { it.toResOrder() }
     }
 
     @Transactional(readOnly = true)
@@ -33,7 +37,7 @@ class OrderService(
 
     suspend fun delete(id: Long) = orderRepository.deleteById(id);
 
-    suspend fun create(request: ReqCreateOrder): Order {
+    suspend fun create(request: ReqCreateOrder): ResOrder {
         val productIds = request.products.map { it.productId }.toSet()
         val productsById = productRepository.findAllById(productIds).toList().associateBy { it.id }
 
@@ -53,16 +57,16 @@ class OrderService(
                 pgOrderId = "${UUID.randomUUID()}".replace("-", "")
             )
         )
-
-        val productInOrders = request.products.map {
-            ProductInOrder(
-                orderId = newOrder.id,
-                productId = it.productId,
-                price = productsById[it.productId]!!.price,
-                quantity = it.quantity
-            )
+        request.products.forEach {
+            productInOrderRepository.save(
+                ProductInOrder(
+                    orderId = newOrder.id,
+                    productId = it.productId,
+                    price = productsById[it.productId]!!.price,
+                    quantity = it.quantity
+                ))
         }
-        productInOrderRepository.saveAll(productInOrders)
-        return newOrder
+
+        return newOrder.toResOrder()
     }
 }

@@ -1,5 +1,6 @@
 package me.snowlight.paymentpg.model
 
+import me.snowlight.paymentpg.controller.ResOrder
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
 

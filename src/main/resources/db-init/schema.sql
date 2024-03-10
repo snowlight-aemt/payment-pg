@@ -20,11 +20,12 @@ CREATE TABLE IF NOT EXISTS TB_ORDER (
 );
 
 CREATE TABLE IF NOT EXISTS TB_PRODUCT_IN_ORDER (
-    order_id BIGINT PRIMARY KEY,
-    product_id VARCHAR(300),
+    order_id BIGINT,
+    product_id BIGINT,
     price BIGINT,
     quantity INT,
     seq SERIAL UNIQUE,
     created_at TIMESTAMP,
-    updated_at TIMESTAMP
+    updated_at TIMESTAMP,
+    PRIMARY KEY(order_id, product_id)
 );

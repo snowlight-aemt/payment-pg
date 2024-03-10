@@ -20,7 +20,7 @@ class OrderController(
     suspend fun getAll(@RequestParam userId: Long) = orderService.getAllByUserId(userId)
 
     @DeleteMapping("/order/{id}")
-    suspend fun delete(@PathVariable id: Long) = orderService.delete(id);
+    suspend fun delete(@PathVariable id: Long) = orderService.delete(id)
 
     @PostMapping("/order")
     suspend fun create(@RequestBody request: ReqCreateOrder) = orderService.create(request)
