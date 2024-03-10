@@ -3,12 +3,9 @@ package me.snowlight.paymentpg.controller
 import me.snowlight.paymentpg.config.Beans
 import me.snowlight.paymentpg.model.Order
 import me.snowlight.paymentpg.model.PgStatus
-import me.snowlight.paymentpg.model.ProductInOrderRepository
-import me.snowlight.paymentpg.model.ProductRepository
-import me.snowlight.paymentpg.service.ProductService
 
 suspend fun Order.toResOrder(): ResOrder {
-    return this.let { ResOrder(
+    return ResOrder(
         id = this.id,
         userId = this.userId,
         description = this.description,
@@ -24,7 +21,7 @@ suspend fun Order.toResOrder(): ResOrder {
                 price = productInOrder.price,
                 quantity = productInOrder.quantity,
             )}
-    )}
+    )
 }
 
 data class ResOrder (
