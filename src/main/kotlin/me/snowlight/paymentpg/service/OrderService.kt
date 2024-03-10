@@ -21,7 +21,7 @@ class OrderService(
     private val productInOrderRepository: ProductInOrderRepository,
 ) {
     @Transactional(readOnly = true)
-    suspend fun get(id: Long) = orderRepository.findById(id)?: throw NotFoundOrderRepository()
+    suspend fun get(id: Long) = orderRepository.findById(id)?: throw NotFoundOrderRepository("$id | 주문 정보가 없습니다.")
 
     @Transactional(readOnly = true)
     suspend fun getAll() = orderRepository.findAll()
