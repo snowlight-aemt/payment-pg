@@ -24,7 +24,14 @@ class OrderService(
     suspend fun get(id: Long) = orderRepository.findById(id)?: throw NotFoundOrderRepository("$id | 주문 정보가 없습니다.")
 
     @Transactional(readOnly = true)
+    suspend fun getAllByUserId(userId: Long): List<Order> {
+        return orderRepository.findAllByUserIdOrderByCreatedAtDesc(userId)
+    }
+
+    @Transactional(readOnly = true)
     suspend fun getAll() = orderRepository.findAll()
+
+    suspend fun delete(id: Long) = orderRepository.deleteById(id);
 
     suspend fun create(request: ReqCreateOrder): Order {
         val productIds = request.products.map { it.productId }.toSet()
