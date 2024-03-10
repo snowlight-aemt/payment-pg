@@ -16,6 +16,9 @@ class Beans: ApplicationContextAware {
         fun <T: Any> getBean(byClass: KClass<T>, vararg arg: Any): T {
             return ctx.getBean(byClass.java, arg)
         }
+
+        val beanProductInOrderRepository: ProductInOrderRepository by lazy { getBean(ProductInOrderRepository::class) }
+        val beanProductRepository: ProductRepository by lazy { getBean(ProductRepository::class) }
     }
     override fun setApplicationContext(applicationContext: ApplicationContext) {
         ctx = applicationContext

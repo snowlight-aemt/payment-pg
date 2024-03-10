@@ -17,10 +17,10 @@ suspend fun Order.toResOrder(): ResOrder {
         pgKey = this.pgKey,
         pgStatus = this.pgStatus,
         pgRetryCount = this.pgRetryCount,
-        products = Beans.getBean(ProductInOrderRepository::class).findAllByOrderId(this.id).map { productInOrder ->
+        products = Beans.beanProductInOrderRepository.findAllByOrderId(this.id).map { productInOrder ->
             ResProductQuantity(
                 id = productInOrder.productId,
-                name = Beans.getBean(ProductRepository::class).findById(productInOrder.productId)?.name ?: "unknown",
+                name = Beans.beanProductRepository.findById(productInOrder.productId)?.name ?: "unknown",
                 price = productInOrder.price,
                 quantity = productInOrder.quantity,
             )}
