@@ -54,6 +54,12 @@ class OrderServiceTest(
             )
         )
 
+        order.products.size shouldBe 2
+        order.products[0].id shouldBe 1
+        order.products[0].quantity shouldBe 10
+        order.products[1].id shouldBe 2
+        order.products[1].quantity shouldBe 300
+
         order.amount shouldBe (10000 * 10) + (50000 * 300)
         order.description shouldNotBe null
 
