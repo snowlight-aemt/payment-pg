@@ -13,6 +13,7 @@ import me.snowlight.paymentpg.model.ProductInOrderRepository
 import me.snowlight.paymentpg.model.ProductRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import reactor.core.publisher.Flux
 import java.util.*
 
 @Transactional
@@ -57,6 +58,17 @@ class OrderService(
                 pgOrderId = "${UUID.randomUUID()}".replace("-", "")
             )
         )
+
+//        val products = request.products.map {
+//            ProductInOrder(
+//                orderId = 1,
+//                productId = 1,
+//                price = 1000,
+//                quantity = 1,
+//            )
+//        }
+//        productInOrderRepository.saveAll(products).
+
         request.products.forEach {
             productInOrderRepository.save(
                 ProductInOrder(
