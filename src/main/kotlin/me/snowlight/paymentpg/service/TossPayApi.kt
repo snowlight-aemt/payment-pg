@@ -47,11 +47,3 @@ class TossPayApi(
             .awaitBody<ResConfirm>()
     }
 }
-
-/*
-curl --request POST \
-  --url https://api.tosspayments.com/v1/payments/confirm \
-  --header 'Authorization: Basic dGVzdF9za181T1dSYXBkQThkbVBaNHpPcXhRUjNvMXpFcVpLOg==' \
-  --header 'Content-Type: application/json' \
-  --data '{"paymentKey":"5zJ4xY7m0kODnyRpQWGrN2xqGlNvLrKwv1M9ENjbeoPaZdL6","orderId":"a4CWyWY5m89PNh7xJwhk1","amount":15000}'
- */
