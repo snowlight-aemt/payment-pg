@@ -42,4 +42,37 @@ class Order(
             Order::pgRetryCount,
         ), superToString = { super.toString() })
     }
+
+    fun capture() {
+        this.pgStatus = PgStatus.CAPTURE_REQUEST
+//        this.pgRetryCount = 5
+    }
+
+    fun authSuccess(pgKey: String) {
+        this.pgKey = pgKey
+        this.pgStatus = PgStatus.AUTH_SUCCESS
+    }
+
+    fun authInvalid(pgKey: String) {
+        this.pgKey = pgKey
+        this.pgStatus = PgStatus.AUTH_INVALID
+    }
+
+    fun captureSuccess() {
+        this.pgStatus = PgStatus.CAPTURE_SUCCESS
+    }
+
+    fun captureFail() {
+        this.pgStatus = PgStatus.CAPTURE_FAIL
+    }
+
+    fun captureRetry() {
+        this.pgStatus = PgStatus.CAPTURE_RETRY
+    }
+
+    fun authFail() {
+        if (this.pgStatus == PgStatus.CREATE) {
+            this.pgStatus = PgStatus.AUTH_FAIL
+        }
+    }
 }

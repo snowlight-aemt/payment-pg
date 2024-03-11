@@ -2,6 +2,7 @@ package me.snowlight.paymentpg.config
 
 import me.snowlight.paymentpg.model.ProductInOrderRepository
 import me.snowlight.paymentpg.model.ProductRepository
+import me.snowlight.paymentpg.service.OrderService
 import org.springframework.context.ApplicationContext
 import org.springframework.context.ApplicationContextAware
 import org.springframework.stereotype.Component
@@ -19,6 +20,7 @@ class Beans: ApplicationContextAware {
 
         val beanProductInOrderRepository: ProductInOrderRepository by lazy { getBean(ProductInOrderRepository::class) }
         val beanProductRepository: ProductRepository by lazy { getBean(ProductRepository::class) }
+        val beanOrderService: OrderService by lazy { getBean(OrderService::class) }
     }
     override fun setApplicationContext(applicationContext: ApplicationContext) {
         ctx = applicationContext
