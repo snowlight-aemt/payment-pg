@@ -1,6 +1,8 @@
 package me.snowlight.paymentpg.controller
 
+import me.snowlight.paymentpg.service.OrderHistoryService
 import me.snowlight.paymentpg.service.OrderService
+import me.snowlight.paymentpg.service.QryOrderHistory
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class OrderController(
     private val orderService: OrderService,
+    private val orderHistoryService: OrderHistoryService,
 ) {
     @GetMapping("/order/{id}")
     suspend fun get(@PathVariable id: Long) = orderService.get(id)
@@ -24,4 +27,7 @@ class OrderController(
 
     @PostMapping("/order")
     suspend fun create(@RequestBody request: ReqCreateOrder) = orderService.create(request)
+
+    @GetMapping("/history")
+    suspend fun getHistory(request: QryOrderHistory) = orderHistoryService.getHistory(request)
 }
