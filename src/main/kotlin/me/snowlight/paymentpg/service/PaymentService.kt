@@ -1,10 +1,13 @@
 package me.snowlight.paymentpg.service
 
 import me.snowlight.paymentpg.config.Beans
+import me.snowlight.paymentpg.controller.PaymentType
 import me.snowlight.paymentpg.controller.ReqPayFailed
 import me.snowlight.paymentpg.controller.ReqPaySucceed
+import me.snowlight.paymentpg.exception.InvalidOrderStatus
 import me.snowlight.paymentpg.model.Order
 import me.snowlight.paymentpg.model.OrderRepository
+import me.snowlight.paymentpg.model.PgStatus
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Propagation
@@ -31,14 +34,25 @@ class PaymentService(
 
         logger.debug { ">> order : $order" }
 
+        return capture(order)
+    }
+
+    suspend fun capture(order: Order): Boolean {
+        if (order.pgStatus !in setOf(PgStatus.CAPTURE_REQUEST, PgStatus.CAPTURE_RETRY))
+            throw InvalidOrderStatus("invalid order status (${order.pgStatus})")
+
         return try {
-            tossPayApi.confirm(request).also { logger.debug { ">> res: $it" } }
+            tossPayApi.confirm(order.toReqPaySuccess()).also { logger.debug { ">> res: $it" } }
             order.captureSuccess()
             true
         } catch (e: Exception) {
             logger.error(e.message, e)
             when (e) {
-                is WebClientRequestException -> order.captureRetry()
+                is WebClientRequestException -> {
+                    if (order.pgStatus == PgStatus.CAPTURE_RETRY)
+                        order.pgRetryCount++
+                    order.captureRetry()
+                }
                 is WebClientResponseException -> order.captureFail()
                 else -> order.captureFail()
             }
@@ -78,5 +92,16 @@ class PaymentService(
              - request: $request
              - order: $order
         """.trimIndent() }
+    }
+
+    private fun Order.toReqPaySuccess(): ReqPaySucceed {
+        return this.let {
+            ReqPaySucceed(
+                paymentKey = it.pgKey!!,
+                orderId = it.pgOrderId!!,
+                amount = it.amount,
+                paymentType = PaymentType.NORMAL
+            )
+        }
     }
 }
