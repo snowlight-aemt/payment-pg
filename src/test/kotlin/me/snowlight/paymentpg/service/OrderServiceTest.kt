@@ -1,10 +1,12 @@
 package me.snowlight.paymentpg.service
 
+import io.kotest.assertions.eq.isOrderedSet
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
+import me.snowlight.paymentpg.config.WithRedisContainer
 import me.snowlight.paymentpg.controller.PaymentType
 import me.snowlight.paymentpg.controller.ReqCreateOrder
 import me.snowlight.paymentpg.controller.ReqPaySucceed
@@ -38,6 +40,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 @ActiveProfiles("test", "toss-pay-test")
 class OrderServiceTest(
     @Autowired private val orderService: OrderService,
+    @Autowired private val paymentService: PaymentService,
     @Autowired private val orderRepository: OrderRepository,
     @Autowired private val productInOrderRepository: ProductInOrderRepository,
     @Autowired private val productRepository: ProductRepository,
@@ -45,6 +48,8 @@ class OrderServiceTest(
 ): StringSpec({
 
     beforeTest {
+        productRepository.deleteAll()
+
         productRepository.save(Product(id = 1L, "apple", 10000).apply { new = true })
         productRepository.save(Product(id = 2L, "banana", 50000).apply { new = true })
     }
@@ -106,7 +111,7 @@ class OrderServiceTest(
             paymentKey = "ABCD",
             amount = resOrder.amount
         )
-        orderService.authSuccess(request)
+        paymentService.authSuccess(request)
         val orderAuthed = orderService.get(resOrder.id).also { it.pgStatus shouldBe PgStatus.AUTH_SUCCESS }
 
         Mockito.`when`(tossPayApi.confirm(request)).thenReturn(ResConfirm(
@@ -117,7 +122,7 @@ class OrderServiceTest(
             method = "card",
         ))
 
-        orderService.capture(request)
+        paymentService.capture(request)
         orderService.get(resOrder.id).pgStatus shouldBe PgStatus.CAPTURE_SUCCESS
     }
 
@@ -137,12 +142,12 @@ class OrderServiceTest(
             paymentKey = "ABCD",
             amount = resOrder.amount
         )
-        orderService.authSuccess(request)
+        paymentService.authSuccess(request)
         orderService.get(resOrder.id).also { it.pgStatus shouldBe PgStatus.AUTH_SUCCESS }
 
         Mockito.`when`(tossPayApi.confirm(request)).thenThrow(WebClientRequestException::class.java)
 
-        orderService.capture(request)
+        paymentService.capture(request)
         orderService.get(resOrder.id).pgStatus shouldBe PgStatus.CAPTURE_RETRY
     }
 
@@ -163,12 +168,12 @@ class OrderServiceTest(
             paymentKey = "ABCD",
             amount = resOrder.amount
         )
-        orderService.authSuccess(request)
+        paymentService.authSuccess(request)
         orderService.get(resOrder.id).also { it.pgStatus shouldBe PgStatus.AUTH_SUCCESS }
 
         Mockito.`when`(tossPayApi.confirm(request)).thenThrow(WebClientResponseException::class.java)
 
-        orderService.capture(request)
+        paymentService.capture(request)
         orderService.get(resOrder.id).pgStatus shouldBe PgStatus.CAPTURE_FAIL
     }
 })

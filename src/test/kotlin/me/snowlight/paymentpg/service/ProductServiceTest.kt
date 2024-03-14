@@ -2,6 +2,7 @@ package me.snowlight.paymentpg.service
 
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
+import me.snowlight.paymentpg.config.WithRedisContainer
 import me.snowlight.paymentpg.model.Product
 import me.snowlight.paymentpg.model.ProductRepository
 import org.junit.jupiter.api.Test
@@ -17,7 +18,7 @@ import org.springframework.test.context.ActiveProfiles
 class ProductServiceTest(
     @Autowired private val productService: ProductService,
     @Autowired private val productRepository: ProductRepository,
-): StringSpec ({
+): WithRedisContainer, StringSpec ({
     beforeTest {
         productRepository.save(Product(1, "apply", 1000).apply { new = true })
         productRepository.save(Product(2, "banana", 5000).apply { new = true })
