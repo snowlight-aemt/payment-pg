@@ -1,9 +1,10 @@
-package me.snowlight.paymentpg.service
+package me.snowlight.paymentpg.service.api
 
+import io.netty.channel.ChannelOption
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import me.snowlight.paymentpg.controller.ReqPaySucceed
-import mu.KotlinLogging
+import me.snowlight.paymentpg.service.ResConfirm
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
@@ -30,7 +31,10 @@ class TossPayApi(
             .maxConnections(10)
             .pendingAcquireTimeout(Duration.ofSeconds(10))
             .build()
-        val connector = ReactorClientHttpConnector(HttpClient.create(provider).secure{ it.sslContext((insecureSSLContext)) } )
+        val connector = ReactorClientHttpConnector(HttpClient.create(provider)
+                .secure{ it.sslContext((insecureSSLContext)) }
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 1000)
+        )
 
         return WebClient.builder().baseUrl(domain)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

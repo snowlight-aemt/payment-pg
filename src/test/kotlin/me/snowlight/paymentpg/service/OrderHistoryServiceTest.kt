@@ -29,6 +29,10 @@ class OrderHistoryServiceTest(
     @Autowired private val orderRepository: OrderRepository,
     @Autowired private val orderHistoryService: OrderHistoryService,
 ): StringSpec({
+    beforeEach() {
+        orderRepository.deleteAll();
+    }
+
     "order history - user_id" {
         listOf(
             Order(userId = 1, description = "abcd", pgStatus = PgStatus.CREATE),

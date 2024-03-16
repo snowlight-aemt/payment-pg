@@ -43,7 +43,12 @@ class Order(
         ), superToString = { super.toString() })
     }
 
-    fun capture() {
+    fun increaseRetryCount() {
+        if (this.pgStatus == PgStatus.CAPTURE_RETRY)
+            this.pgRetryCount++
+    }
+
+    fun captureRequest() {
         this.pgStatus = PgStatus.CAPTURE_REQUEST
 //        this.pgRetryCount = 5
     }

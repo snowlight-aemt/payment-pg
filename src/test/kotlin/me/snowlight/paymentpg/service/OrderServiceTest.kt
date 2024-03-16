@@ -3,7 +3,6 @@ package me.snowlight.paymentpg.service
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
 import me.snowlight.paymentpg.controller.PaymentType
 import me.snowlight.paymentpg.controller.ReqCreateOrder
@@ -13,12 +12,10 @@ import me.snowlight.paymentpg.exception.NotFoundProductException
 import me.snowlight.paymentpg.model.OrderRepository
 import me.snowlight.paymentpg.model.PgStatus
 import me.snowlight.paymentpg.model.Product
-import me.snowlight.paymentpg.model.ProductInOrder
 import me.snowlight.paymentpg.model.ProductInOrderRepository
 import me.snowlight.paymentpg.model.ProductRepository
-import org.junit.jupiter.api.Test
+import me.snowlight.paymentpg.service.api.TossPayApi
 
-import org.junit.jupiter.api.Assertions.*
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -27,7 +24,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 
@@ -38,6 +34,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 @ActiveProfiles("test", "toss-pay-test")
 class OrderServiceTest(
     @Autowired private val orderService: OrderService,
+    @Autowired private val paymentService: PaymentService,
     @Autowired private val orderRepository: OrderRepository,
     @Autowired private val productInOrderRepository: ProductInOrderRepository,
     @Autowired private val productRepository: ProductRepository,
@@ -45,6 +42,8 @@ class OrderServiceTest(
 ): StringSpec({
 
     beforeTest {
+        productRepository.deleteAll()
+
         productRepository.save(Product(id = 1L, "apple", 10000).apply { new = true })
         productRepository.save(Product(id = 2L, "banana", 50000).apply { new = true })
     }
@@ -106,7 +105,7 @@ class OrderServiceTest(
             paymentKey = "ABCD",
             amount = resOrder.amount
         )
-        orderService.authSuccess(request)
+        paymentService.authSuccess(request)
         val orderAuthed = orderService.get(resOrder.id).also { it.pgStatus shouldBe PgStatus.AUTH_SUCCESS }
 
         Mockito.`when`(tossPayApi.confirm(request)).thenReturn(ResConfirm(
@@ -117,7 +116,7 @@ class OrderServiceTest(
             method = "card",
         ))
 
-        orderService.capture(request)
+        paymentService.capture(request)
         orderService.get(resOrder.id).pgStatus shouldBe PgStatus.CAPTURE_SUCCESS
     }
 
@@ -137,12 +136,12 @@ class OrderServiceTest(
             paymentKey = "ABCD",
             amount = resOrder.amount
         )
-        orderService.authSuccess(request)
+        paymentService.authSuccess(request)
         orderService.get(resOrder.id).also { it.pgStatus shouldBe PgStatus.AUTH_SUCCESS }
 
         Mockito.`when`(tossPayApi.confirm(request)).thenThrow(WebClientRequestException::class.java)
 
-        orderService.capture(request)
+        paymentService.capture(request)
         orderService.get(resOrder.id).pgStatus shouldBe PgStatus.CAPTURE_RETRY
     }
 
@@ -163,12 +162,12 @@ class OrderServiceTest(
             paymentKey = "ABCD",
             amount = resOrder.amount
         )
-        orderService.authSuccess(request)
+        paymentService.authSuccess(request)
         orderService.get(resOrder.id).also { it.pgStatus shouldBe PgStatus.AUTH_SUCCESS }
 
         Mockito.`when`(tossPayApi.confirm(request)).thenThrow(WebClientResponseException::class.java)
 
-        orderService.capture(request)
+        paymentService.capture(request)
         orderService.get(resOrder.id).pgStatus shouldBe PgStatus.CAPTURE_FAIL
     }
 })
