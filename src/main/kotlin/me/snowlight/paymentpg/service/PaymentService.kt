@@ -1,6 +1,6 @@
 package me.snowlight.paymentpg.service
 
-import me.snowlight.paymentpg.config.Beans
+import kotlinx.coroutines.delay
 import me.snowlight.paymentpg.controller.PaymentType
 import me.snowlight.paymentpg.controller.ReqPayFailed
 import me.snowlight.paymentpg.controller.ReqPaySucceed
@@ -8,9 +8,11 @@ import me.snowlight.paymentpg.exception.InvalidOrderStatus
 import me.snowlight.paymentpg.model.Order
 import me.snowlight.paymentpg.model.OrderRepository
 import me.snowlight.paymentpg.model.PgStatus
+import me.snowlight.paymentpg.service.api.PaymentApi
+import me.snowlight.paymentpg.service.api.TossPayApi
+import me.snowlight.paymentpg.service.api.TossPayApiError
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
-import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
@@ -23,42 +25,62 @@ class PaymentService(
     private val orderRepository: OrderRepository,
     private val orderService: OrderService,
     private val tossPayApi: TossPayApi,
+    private val paymentApi: PaymentApi,
 ) {
+    suspend fun recapture(orderId: Long) {
+        orderRepository.findById(orderId)?.let { order ->
+            delay(1000)
+
+            this.capture(order)
+        }
+    }
 
     // LEARN save 메서드를 사용해서 Transactional 끊은 이유는 ?
     //  - 외부 API 에 영향을 받지 않기 위해서 - 응닶이 올 때, 까지 대기 해야 한다.
-    suspend fun capture(request: ReqPaySucceed): Boolean {
+    suspend fun capture(request: ReqPaySucceed) {
         val order = orderService.getOrderByPgOrderId(request.orderId)
-        order.capture()
+        order.captureRequest()
         orderService.save(order)
 
         logger.debug { ">> order : $order" }
-
-        return capture(order)
+        capture(order)
     }
 
-    suspend fun capture(order: Order): Boolean {
+    // TODO 결제의 응답을 구분하기 위한 코드가 복잡하고 알아 보기 어렵다. (리펙터링 고민)
+    suspend fun capture(order: Order) {
         if (order.pgStatus !in setOf(PgStatus.CAPTURE_REQUEST, PgStatus.CAPTURE_RETRY))
             throw InvalidOrderStatus("invalid order status (${order.pgStatus})")
+        order.increaseRetryCount()
 
-        return try {
+        try {
             tossPayApi.confirm(order.toReqPaySuccess()).also { logger.debug { ">> res: $it" } }
             order.captureSuccess()
-            true
         } catch (e: Exception) {
             logger.error(e.message, e)
             when (e) {
                 is WebClientRequestException -> {
-                    if (order.pgStatus == PgStatus.CAPTURE_RETRY)
-                        order.pgRetryCount++
                     order.captureRetry()
                 }
-                is WebClientResponseException -> order.captureFail()
+                is WebClientResponseException -> {
+                    val response = e.getResponseBodyAs(TossPayApiError::class.java)
+                    when (response?.code) {
+                        "ALREADY_PROCESSED_PAYMENT" -> order.captureSuccess()
+                        "PROVIDER_ERROR", "FAILED_INTERNAL_SYSTEM_PROCESSING" -> {
+                            order.captureRetry()
+                        }
+                        else -> order.captureFail()
+                    }
+                }
                 else -> order.captureFail()
             }
-            false
+            if (order.pgStatus == PgStatus.CAPTURE_RETRY && order.pgRetryCount >= 3)
+                order.captureFail()
+            if (order.pgStatus != PgStatus.CAPTURE_SUCCESS)
+                throw e
         } finally {
-            orderRepository.save(order)
+            orderService.save(order)
+            if (order.pgStatus == PgStatus.CAPTURE_RETRY)
+                paymentApi.recapture(order.id)
         }
     }
 

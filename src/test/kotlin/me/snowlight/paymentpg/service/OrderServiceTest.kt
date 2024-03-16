@@ -1,12 +1,9 @@
 package me.snowlight.paymentpg.service
 
-import io.kotest.assertions.eq.isOrderedSet
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
 import io.kotest.matchers.shouldNotBe
-import me.snowlight.paymentpg.config.WithRedisContainer
 import me.snowlight.paymentpg.controller.PaymentType
 import me.snowlight.paymentpg.controller.ReqCreateOrder
 import me.snowlight.paymentpg.controller.ReqPaySucceed
@@ -15,12 +12,10 @@ import me.snowlight.paymentpg.exception.NotFoundProductException
 import me.snowlight.paymentpg.model.OrderRepository
 import me.snowlight.paymentpg.model.PgStatus
 import me.snowlight.paymentpg.model.Product
-import me.snowlight.paymentpg.model.ProductInOrder
 import me.snowlight.paymentpg.model.ProductInOrderRepository
 import me.snowlight.paymentpg.model.ProductRepository
-import org.junit.jupiter.api.Test
+import me.snowlight.paymentpg.service.api.TossPayApi
 
-import org.junit.jupiter.api.Assertions.*
 import org.mockito.Mockito
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -29,7 +24,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Profile
 import org.springframework.test.context.ActiveProfiles
-import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
 
