@@ -5,7 +5,10 @@ resources/ 폴더 아래에 생성한다.
 ```yml
 # filename, application-payment-gateway.yml
 payment:
+  self:
+    domain: http://localhost:8080
   toss:
+    domain: https://api.tosspayments.com
     key:
       client: 
       secret: 
