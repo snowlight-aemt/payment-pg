@@ -11,6 +11,7 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
+import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.netty.http.client.HttpClient
 import reactor.netty.resources.ConnectionProvider
 import java.time.Duration
@@ -30,6 +31,6 @@ class PaymentApi(
     }
 
     suspend fun recapture(orderId: Long) {
-        client.put().uri("/recapture/$orderId").retrieve()
+        client.put().uri("/recapture/$orderId").retrieve().bodyToMono<String>().subscribe()
     }
 }

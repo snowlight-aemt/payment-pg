@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import kotlin.math.pow
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -29,10 +32,15 @@ class PaymentService(
 ) {
     suspend fun recapture(orderId: Long) {
         orderRepository.findById(orderId)?.let { order ->
-            delay(1000)
-
+            delay(getBackoffDelay(order.pgRetryCount).also { logger.debug { " >> $it sec" } })
             this.capture(order)
         }
+    }
+
+    private fun getBackoffDelay(count: Int): Duration {
+        val temp = (2.0).pow(count).toInt() * 1000
+        val delay = temp + (0..temp).random()
+        return delay.milliseconds
     }
 
     // LEARN save 메서드를 사용해서 Transactional 끊은 이유는 ?
