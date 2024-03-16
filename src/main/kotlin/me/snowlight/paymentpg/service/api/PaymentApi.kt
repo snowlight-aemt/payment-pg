@@ -3,6 +3,7 @@ package me.snowlight.paymentpg.service.api
 import io.netty.handler.ssl.SslContextBuilder
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory
 import me.snowlight.paymentpg.controller.ReqPaySucceed
+import me.snowlight.paymentpg.service.CaptureMarker
 import me.snowlight.paymentpg.service.ResConfirm
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -19,18 +20,15 @@ import java.time.Duration
 @Service
 class PaymentApi(
     @Value("\${payment.self.domain}")
-    private val domain: String,
-
+    domain: String,
+    private val captureMarker: CaptureMarker,
 ) {
-    private val client = createClient()
-
-    private fun createClient(): WebClient {
-        return WebClient.builder().baseUrl(domain)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .build()
-    }
+    private val client = WebClient.builder().baseUrl(domain)
+        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .build()
 
     suspend fun recapture(orderId: Long) {
+        captureMarker.put(orderId)
         client.put().uri("/recapture/$orderId").retrieve().bodyToMono<String>().subscribe()
     }
 }

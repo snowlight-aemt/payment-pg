@@ -16,9 +16,11 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClientRequestException
 import org.springframework.web.reactive.function.client.WebClientResponseException
+import java.time.Duration
+import java.time.LocalDateTime
 import kotlin.math.pow
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.toDuration
 
 private val logger = KotlinLogging.logger {}
 
@@ -29,6 +31,7 @@ class PaymentService(
     private val orderService: OrderService,
     private val tossPayApi: TossPayApi,
     private val paymentApi: PaymentApi,
+    private val captureMarker: CaptureMarker,
 ) {
     suspend fun recapture(orderId: Long) {
         orderRepository.findById(orderId)?.let { order ->
@@ -37,7 +40,7 @@ class PaymentService(
         }
     }
 
-    private fun getBackoffDelay(count: Int): Duration {
+    private fun getBackoffDelay(count: Int): kotlin.time.Duration {
         val temp = (2.0).pow(count).toInt() * 1000
         val delay = temp + (0..temp).random()
         return delay.milliseconds
@@ -58,7 +61,9 @@ class PaymentService(
     suspend fun capture(order: Order) {
         if (order.pgStatus !in setOf(PgStatus.CAPTURE_REQUEST, PgStatus.CAPTURE_RETRY))
             throw InvalidOrderStatus("invalid order status (${order.pgStatus})")
+
         order.increaseRetryCount()
+        captureMarker.put(order.id)
 
         try {
             tossPayApi.confirm(order.toReqPaySuccess()).also { logger.debug { ">> res: $it" } }
@@ -87,9 +92,23 @@ class PaymentService(
                 throw e
         } finally {
             orderService.save(order)
-            if (order.pgStatus == PgStatus.CAPTURE_RETRY)
+            captureMarker.remove(order.id)
+            if (order.pgStatus == PgStatus.CAPTURE_RETRY) {
                 paymentApi.recapture(order.id)
+            }
         }
+    }
+
+    // TODO 다른 방법도 없는지 생각해 보자 (최신 데이터를 요청한다고 해도 이슈는 없게 설계되어 있지만)
+    //  60 초 보다 빠르게 기동되면 데이터 손실(누수) 될 수 있다.
+    suspend fun recaptureOnBoot() {
+        val now = LocalDateTime.now()
+        captureMarker.getAll()
+            .filter { Duration.between(it.updatedAt!!, now).seconds >= 60  }
+            .forEach {
+                captureMarker.remove(it.id)
+                paymentApi.recapture(it.id)
+            }
     }
 
     suspend fun authSuccess(request: ReqPaySucceed): Boolean {
