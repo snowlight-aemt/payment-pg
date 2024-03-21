@@ -20,6 +20,10 @@ repositories {
 }
 
 dependencies {
+    implementation("org.springframework.kafka:spring-kafka")
+    implementation("io.projectreactor.kafka:reactor-kafka:1.3.23")
+
+
     implementation("au.com.console:kassava:2.1.0")
 
     implementation("io.github.microutils:kotlin-logging:3.0.5")

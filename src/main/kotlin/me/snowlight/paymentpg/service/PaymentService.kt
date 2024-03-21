@@ -1,6 +1,7 @@
 package me.snowlight.paymentpg.service
 
 import kotlinx.coroutines.delay
+import me.snowlight.paymentpg.config.common.KafkaProducer
 import me.snowlight.paymentpg.controller.PaymentType
 import me.snowlight.paymentpg.controller.ReqPayFailed
 import me.snowlight.paymentpg.controller.ReqPaySucceed
@@ -20,7 +21,6 @@ import java.time.Duration
 import java.time.LocalDateTime
 import kotlin.math.pow
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.toDuration
 
 private val logger = KotlinLogging.logger {}
 
@@ -32,6 +32,7 @@ class PaymentService(
     private val tossPayApi: TossPayApi,
     private val paymentApi: PaymentApi,
     private val captureMarker: CaptureMarker,
+    private val kafkaProducer: KafkaProducer,
 ) {
     suspend fun recapture(orderId: Long) {
         orderRepository.findById(orderId)?.let { order ->
@@ -96,6 +97,7 @@ class PaymentService(
             if (order.pgStatus == PgStatus.CAPTURE_RETRY) {
                 paymentApi.recapture(order.id)
             }
+            kafkaProducer.sendPayment(order)
         }
     }
 

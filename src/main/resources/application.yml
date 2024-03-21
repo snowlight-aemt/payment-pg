@@ -24,6 +24,8 @@ spring:
       mode: always
       schema-locations: classpath:db-init/schema.sql
       data-locations: classpath:db-init/test-data.sql
+  kafka:
+    bootstrap-servers: localhost:9092
   thymeleaf:
     cache: off
 server:
